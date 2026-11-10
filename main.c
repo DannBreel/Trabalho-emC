@@ -5,7 +5,7 @@
 
 
 // struct pra salvar as atvidades -- lista simplesmente encadeada --
-typedef struct tarefa{
+typedef struct Tarefa{
     // info principal
     char titulo[30];
     char materia[30];
@@ -19,8 +19,8 @@ typedef struct tarefa{
     int nota;
 
     // no para o proximo
-    struct tarefa* proximo;
-}tarefa;
+    struct Tarefa* proximo;
+}Tarefa;
 
 // variaveis para deixar global
 typedef struct Global{
@@ -29,17 +29,41 @@ typedef struct Global{
     GtkWidget *titulo;
     GtkWidget *nota;
     GtkWidget *calendar;
+
     GtkWidget *stack;
+    GtkWidget *window;
+    GtkWidget *listbox;
+
+    bool editando;
+    Tarefa *subedit;
 
     int Datual;
     int Matual;
     int Aatual;
 
-    tarefa *head;
+    Tarefa *head;
 
 } Global;
 
+// pra avisar que a função existe
+void atualizar_lista(Global *global);
+
 // funçoes outras
+void popup_msg(GtkWidget *janela, const char *mensagem) {
+
+    GtkWidget *msg = gtk_message_dialog_new(
+
+        GTK_WINDOW(janela),            
+        GTK_DIALOG_MODAL,            
+        GTK_MESSAGE_WARNING,        
+        GTK_BUTTONS_OK,                
+        "%s", mensagem                
+    );
+
+    gtk_dialog_run(GTK_DIALOG(msg));   
+    gtk_widget_destroy(msg);           
+}
+
 void abrir_calendario(GtkWidget *botao, gpointer dados) {
     GtkWidget *popover = GTK_WIDGET(dados);
 
@@ -47,7 +71,7 @@ void abrir_calendario(GtkWidget *botao, gpointer dados) {
     gtk_popover_popup(GTK_POPOVER(popover));
 }
 
-static void limpar_campos(gpointer dados) { // dados precisa ser &global
+void limpar_campos(gpointer dados) { // dados precisa ser &global
     Global *global=dados;
 
     gtk_entry_set_text(GTK_ENTRY(global->materia), "");
@@ -56,12 +80,129 @@ static void limpar_campos(gpointer dados) { // dados precisa ser &global
 
 }
 
+void excluir(GtkWidget *botao, gpointer dados){
+    Global *global = g_object_get_data(G_OBJECT(botao), "global");
+    Tarefa *alvo;
+
+    if(global->subedit && global->editando == true){
+        alvo = global->subedit;
+        global->subedit=NULL;
+        global->editando == FALSE;
+    }
+    else{
+    alvo = dados;
+    }
+
+    // pp é um ponteiro duplo para buscar pelo ponteiro da tarefa
+    Tarefa **pp = &global->head;
+
+    // se *pp == NULL o while entende como false
+    while (*pp && *pp != alvo){
+         pp = &(*pp)->proximo;
+    }
+
+    if (*pp) {
+        *pp = alvo->proximo;   
+        free(alvo);
+    }
+    atualizar_lista(global);  
+
+}
+
+void editar(GtkWidget *botao, gpointer dados){
+
+    Tarefa *alvo = dados;
+    Global *global = g_object_get_data(G_OBJECT(botao), "global");
+
+    global->editando = TRUE;
+    global->subedit = alvo;
+
+    GtkStack *stack = GTK_STACK(global->stack);
+    gtk_stack_set_visible_child_name(stack, "criar");
+
+    gtk_entry_set_text((global->titulo), alvo->titulo);
+    gtk_entry_set_text(global->materia, alvo->materia);
+    gtk_entry_set_text(global->nota, alvo->nota);
+
+}
+
+void atualizar_lista(Global *global) {
+
+    // apaga as linhas que já estavam lá
+    GList *filhos = gtk_container_get_children(GTK_CONTAINER(global->listbox));
+
+    for (GList *i = filhos; i != NULL; i = i->next){
+        gtk_widget_destroy(GTK_WIDGET(i->data));
+    }
+
+    g_list_free(filhos);
+
+    //  percorre a lista encadeada e cria uma linha por tarefa
+    for (Tarefa *t = global->head; t != NULL; t = t->proximo) {
+
+        char texto[150];
+        snprintf(texto, sizeof(texto), "%s - %s\nData: %s Prazo: %s | Nota: %d",
+                 t->materia, t->titulo, t->data, t->prazo, t->nota);
+
+        GtkWidget *label = gtk_label_new(texto);
+        gtk_widget_set_halign(label, GTK_ALIGN_START);
+
+        GtkWidget *bt_editar  = gtk_button_new_with_label("editar");
+        GtkWidget *bt_excluir = gtk_button_new_with_label("excluir");
+        gtk_widget_set_valign(bt_editar,  GTK_ALIGN_CENTER);
+        gtk_widget_set_valign(bt_excluir, GTK_ALIGN_CENTER);
+
+        // o botao vai levar o global e a tarefa vai no dados
+        g_object_set_data(G_OBJECT(bt_editar),  "global", global);
+        g_object_set_data(G_OBJECT(bt_excluir), "global", global);
+
+        g_signal_connect(bt_editar,  "clicked", G_CALLBACK(editar),  t);
+        g_signal_connect(bt_excluir, "clicked", G_CALLBACK(excluir), t);
+
+        GtkWidget *linha = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+        gtk_widget_set_margin_top(linha, 8);
+        gtk_widget_set_margin_bottom(linha, 8);
+        gtk_widget_set_margin_start(linha, 8);
+        gtk_widget_set_margin_end(linha, 8);
+
+        gtk_box_pack_start(GTK_BOX(linha), label, TRUE, TRUE, 0);   
+        gtk_box_pack_end(GTK_BOX(linha), bt_excluir, FALSE, FALSE, 0); 
+        gtk_box_pack_end(GTK_BOX(linha), bt_editar,  FALSE, FALSE, 0); 
+
+        gtk_list_box_insert(GTK_LIST_BOX(global->listbox), linha, -1);
+    }
+
+    //  widgets criados depois da janela aberta precisam disso para aparecer
+    gtk_widget_show_all(global->listbox);
+}
+
 void criar_atividade(GtkWidget *botao, gpointer dados) {
 
     Global *global = dados;
 
-    tarefa *novo = malloc(sizeof(tarefa));
+    Tarefa *novo = malloc(sizeof(Tarefa));
     if (novo == NULL) return;
+
+    guint ano, mes, dia;
+    gtk_calendar_get_date(GTK_CALENDAR(global->calendar), &ano, &mes, &dia);
+
+    snprintf(novo->prazo, sizeof(novo->prazo), "%02u/%02u/%04u", dia, mes + 1, ano); // mes +1 porque o sistema le como 11
+    novo->prazo_sist = ano*10000 + (mes+1)*100 + dia; 
+
+    snprintf(novo->data, sizeof(novo->data), "%02u/%02u/%04u", global->Datual, global->Matual, global->Aatual); 
+    novo->data_sist = global->Aatual*10000 + global->Matual*100 + global->Datual; 
+
+    // exclui o novo caso o prazo seja antes da data atual
+    if(global->editando == FALSE && (novo->prazo_sist)<(novo->data_sist)){
+        free(novo);
+        popup_msg(global->window, "Prazo invalido");
+        return;
+    }
+    else if(global->subedit && (global->subedit->data_sist)>(novo->prazo_sist)){
+        free(novo);
+        popup_msg(global->window, "Prazo invalido");
+        return;
+    }
 
     const char *mat = gtk_entry_get_text(
         GTK_ENTRY(global->materia)
@@ -75,21 +216,6 @@ void criar_atividade(GtkWidget *botao, gpointer dados) {
         GTK_ENTRY(global->nota)
     );
 
-    guint ano, mes, dia;
-    gtk_calendar_get_date(GTK_CALENDAR(global->calendar), &ano, &mes, &dia);
-
-    snprintf(novo->prazo, sizeof(novo->prazo), "%02u/%02u/%04u", dia, mes + 1, ano); // mes +1 porque o sistema le como 11
-    novo->prazo_sist = ano*10000 + (mes+1)*100 + dia; 
-
-    snprintf(novo->data, sizeof(novo->data), "%02u/%02u/%04u", global->Datual, global->Matual, global->Aatual); 
-    novo->data_sist = global->Aatual*10000 + global->Matual*100 + global->Datual; 
-
-    // exclui o novo caso o prazo seja antes da data atual
-    if(novo->prazo_sist<novo->data_sist){
-        free(novo);
-        return;
-    }
-
     snprintf(novo->materia, sizeof(novo->materia), "%s", mat);
     snprintf(novo->titulo, sizeof(novo->titulo), "%s", tit);
 
@@ -98,6 +224,10 @@ void criar_atividade(GtkWidget *botao, gpointer dados) {
     // empurra pra frente
     novo->proximo = global->head;
     global->head = novo;
+
+    if(global->subedit && global->editando == true){
+        excluir(botao, dados);
+    }
 
     // limpa os campos e volta pro inicio
     limpar_campos(dados);
@@ -120,8 +250,10 @@ void trinicio(GtkWidget *botao, gpointer dados) {
 }
 
 void trler(GtkWidget *botao, gpointer dados) {
-    GtkStack *stack = GTK_STACK(dados);
+    Global *global=dados;
+    GtkStack *stack = GTK_STACK(global->stack);
 
+    atualizar_lista(dados);
     gtk_stack_set_visible_child_name(stack, "ler");
 }
 
@@ -206,6 +338,7 @@ int main(int argc, char **argv) {
     // botao cancela e cria
     GtkWidget *botcancel = gtk_button_new_with_label("cancelar");
     GtkWidget *botcriar = gtk_button_new_with_label("criar");
+    g_object_set_data(G_OBJECT(botcriar),"global",&global);
 
     gtk_grid_attach(GTK_GRID(criar), botcancel, 1, 8, 1, 1);
     gtk_grid_attach(GTK_GRID(criar), botcriar, 2, 8, 1, 1);
@@ -213,8 +346,13 @@ int main(int argc, char **argv) {
     gtk_widget_set_halign(criar, GTK_ALIGN_CENTER );
     gtk_widget_set_valign(criar, GTK_ALIGN_CENTER );
 
-    // config gpointer
+    // config da struct global
     Global global;
+
+    global.editando = FALSE;
+    global.subedit = NULL;
+
+    global.window = window;
 
     global.materia = materia;
     global.titulo = titulo;
@@ -229,6 +367,19 @@ int main(int argc, char **argv) {
     // config do grid ler ----0002----
     GtkWidget *ler;
     ler = gtk_grid_new(); 
+
+    // sistema de scroll
+    GtkWidget *scroll = gtk_scrolled_window_new(NULL, NULL);
+    gtk_widget_set_hexpand(scroll, TRUE);
+    gtk_widget_set_vexpand(scroll, TRUE);
+
+    // config da list box da visualização
+    GtkWidget *listbox = gtk_list_box_new();
+
+    gtk_container_add(GTK_CONTAINER(scroll), listbox);
+    gtk_grid_attach(GTK_GRID(ler), scroll, 0, 1, 1, 1);
+
+    global.listbox = listbox;
 
     GtkWidget *botvoltar = gtk_button_new_with_label("voltar");
     gtk_grid_attach(GTK_GRID(ler), botvoltar, 0, 0, 1, 1);
@@ -249,7 +400,7 @@ int main(int argc, char **argv) {
     g_signal_connect(botcancel, "clicked", G_CALLBACK(trinicio), stack);
     g_signal_connect(botvoltar, "clicked", G_CALLBACK(trinicio), stack);
 
-    g_signal_connect(btl, "clicked", G_CALLBACK(trler), stack);
+    g_signal_connect(btl, "clicked", G_CALLBACK(trler), &global);
 
     // outras funçoes
     g_signal_connect(prazo, "clicked",G_CALLBACK(abrir_calendario), popprazo);
@@ -266,7 +417,7 @@ int main(int argc, char **argv) {
 
     gtk_stack_set_visible_child_name(GTK_STACK(stack), "inicio");
     gtk_widget_show_all(window);
-
+        
 
     gtk_main();
     return 0;
