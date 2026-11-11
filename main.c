@@ -71,8 +71,7 @@ void abrir_calendario(GtkWidget *botao, gpointer dados) {
     gtk_popover_popup(GTK_POPOVER(popover));
 }
 
-void limpar_campos(gpointer dados) { // dados precisa ser &global
-    Global *global=dados;
+void limpar_campos(Global *global) { // dados precisa ser &global
 
     gtk_entry_set_text(GTK_ENTRY(global->materia), "");
     gtk_entry_set_text(GTK_ENTRY(global->titulo), "");
@@ -86,8 +85,8 @@ void excluir(GtkWidget *botao, gpointer dados){
 
     if(global->subedit && global->editando == true){
         alvo = global->subedit;
-        global->subedit=NULL;
-        global->editando == FALSE;
+        global->subedit = NULL;
+        global->editando = FALSE;
     }
     else{
     alvo = dados;
@@ -120,9 +119,12 @@ void editar(GtkWidget *botao, gpointer dados){
     GtkStack *stack = GTK_STACK(global->stack);
     gtk_stack_set_visible_child_name(stack, "criar");
 
-    gtk_entry_set_text((global->titulo), alvo->titulo);
-    gtk_entry_set_text(global->materia, alvo->materia);
-    gtk_entry_set_text(global->nota, alvo->nota);
+    gtk_entry_set_text(GTK_ENTRY(global->titulo), alvo->titulo);
+    gtk_entry_set_text(GTK_ENTRY(global->materia), alvo->materia);
+
+    char nota[30];
+    snprintf(nota, sizeof(nota), "%d", alvo->nota);
+    gtk_entry_set_text(GTK_ENTRY(global->nota), nota);
 
 }
 
@@ -189,16 +191,17 @@ void criar_atividade(GtkWidget *botao, gpointer dados) {
     snprintf(novo->prazo, sizeof(novo->prazo), "%02u/%02u/%04u", dia, mes + 1, ano); // mes +1 porque o sistema le como 11
     novo->prazo_sist = ano*10000 + (mes+1)*100 + dia; 
 
+    if(global->subedit && global->editando == TRUE){
+        strcpy(novo->data , global->subedit->data);
+        novo->data_sist = global->subedit->data_sist;
+    }
+    else{
     snprintf(novo->data, sizeof(novo->data), "%02u/%02u/%04u", global->Datual, global->Matual, global->Aatual); 
     novo->data_sist = global->Aatual*10000 + global->Matual*100 + global->Datual; 
+    }
 
     // exclui o novo caso o prazo seja antes da data atual
-    if(global->editando == FALSE && (novo->prazo_sist)<(novo->data_sist)){
-        free(novo);
-        popup_msg(global->window, "Prazo invalido");
-        return;
-    }
-    else if(global->subedit && (global->subedit->data_sist)>(novo->prazo_sist)){
+    if((novo->prazo_sist)<(novo->data_sist)){
         free(novo);
         popup_msg(global->window, "Prazo invalido");
         return;
@@ -244,7 +247,15 @@ void trcriar(GtkWidget *botao, gpointer dados) {
 }
 
 void trinicio(GtkWidget *botao, gpointer dados) {
-    GtkStack *stack = GTK_STACK(dados);
+    Global *global = dados;
+    GtkStack *stack = GTK_STACK(global->stack);
+
+    limpar_campos(global);
+
+    if(global->editando == TRUE && global->subedit){
+        global->editando = FALSE;
+        global->subedit = NULL;
+    }
 
     gtk_stack_set_visible_child_name(stack, "inicio");
 }
@@ -259,6 +270,7 @@ void trler(GtkWidget *botao, gpointer dados) {
 
 
 int main(int argc, char **argv) {
+    Global global;
 
     gtk_init(&argc, &argv);
 
@@ -336,8 +348,8 @@ int main(int argc, char **argv) {
     gtk_grid_attach(GTK_GRID(criar), nota, 0, 5, 1, 1);
 
     // botao cancela e cria
-    GtkWidget *botcancel = gtk_button_new_with_label("cancelar");
-    GtkWidget *botcriar = gtk_button_new_with_label("criar");
+    GtkWidget *botcancel = gtk_button_new_with_label("Cancelar");
+    GtkWidget *botcriar = gtk_button_new_with_label("Pronto");
     g_object_set_data(G_OBJECT(botcriar),"global",&global);
 
     gtk_grid_attach(GTK_GRID(criar), botcancel, 1, 8, 1, 1);
@@ -347,7 +359,6 @@ int main(int argc, char **argv) {
     gtk_widget_set_valign(criar, GTK_ALIGN_CENTER );
 
     // config da struct global
-    Global global;
 
     global.editando = FALSE;
     global.subedit = NULL;
@@ -397,8 +408,8 @@ int main(int argc, char **argv) {
     // botoes voltar
     g_signal_connect(btc, "clicked", G_CALLBACK(trcriar), stack);
 
-    g_signal_connect(botcancel, "clicked", G_CALLBACK(trinicio), stack);
-    g_signal_connect(botvoltar, "clicked", G_CALLBACK(trinicio), stack);
+    g_signal_connect(botcancel, "clicked", G_CALLBACK(trinicio), &global);
+    g_signal_connect(botvoltar, "clicked", G_CALLBACK(trinicio), &global);
 
     g_signal_connect(btl, "clicked", G_CALLBACK(trler), &global);
 
