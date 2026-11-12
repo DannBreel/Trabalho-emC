@@ -47,6 +47,8 @@ typedef struct Global{
 
 // pra avisar que a função existe
 void atualizar_lista(Global *global);
+void save_files(Global *global);
+void load_files(Global *global);
 
 // funçoes outras
 void popup_msg(GtkWidget *janela, const char *mensagem) {
@@ -77,6 +79,9 @@ void limpar_campos(Global *global) { // dados precisa ser &global
     gtk_entry_set_text(GTK_ENTRY(global->titulo), "");
     gtk_entry_set_text(GTK_ENTRY(global->nota), "");
 
+    gtk_calendar_select_month(GTK_CALENDAR(global->calendar),(global->Matual-1),global->Aatual);
+    gtk_calendar_select_day(GTK_CALENDAR(global->calendar),global->Datual);
+
 }
 
 void excluir(GtkWidget *botao, gpointer dados){
@@ -92,18 +97,16 @@ void excluir(GtkWidget *botao, gpointer dados){
     alvo = dados;
     }
 
-    // pp é um ponteiro duplo para buscar pelo ponteiro da tarefa
-    Tarefa **pp = &global->head;
-
-    // se *pp == NULL o while entende como false
-    while (*pp && *pp != alvo){
-         pp = &(*pp)->proximo;
+    Tarefa **pp = &(global->head);  // pp == &(global.head) 
+                                   // *pp == global->head->proximo
+    while (*pp && *pp != alvo){    // global->head->proximo != alvo
+         pp = &(*pp)->proximo;    //== pp = &(global->head->proximo)->proximo | reapontando para o ponteiro denovo
     }
-
     if (*pp) {
-        *pp = alvo->proximo;   
+        *pp = alvo->proximo;      // global->head->proximo = alvo->proximo |
         free(alvo);
     }
+    
     atualizar_lista(global);  
 
 }
@@ -126,6 +129,14 @@ void editar(GtkWidget *botao, gpointer dados){
     snprintf(nota, sizeof(nota), "%d", alvo->nota);
     gtk_entry_set_text(GTK_ENTRY(global->nota), nota);
 
+    int ano = (alvo->prazo_sist)/10000;          // ano == aaaammdd = aaaa,mmdd = aaaa
+    int mes = ((alvo->prazo_sist)/100);          // mes == aaaamm,dd = aaaamm
+    int dia = ((alvo->prazo_sist)-(mes*100));    // dia == aaaammdd - aaaamm00 = dd
+    mes=(mes-(ano*100))-1;                       // mes == aaaamm - aaaa00 = mm
+
+    gtk_calendar_select_month(GTK_CALENDAR(global->calendar),mes,ano);
+    gtk_calendar_select_day(GTK_CALENDAR(global->calendar),dia);
+
 }
 
 void atualizar_lista(Global *global) {
@@ -141,7 +152,7 @@ void atualizar_lista(Global *global) {
 
     //  percorre a lista encadeada e cria uma linha por tarefa
     for (Tarefa *t = global->head; t != NULL; t = t->proximo) {
-
+        
         char texto[150];
         snprintf(texto, sizeof(texto), "%s - %s\nData: %s Prazo: %s | Nota: %d",
                  t->materia, t->titulo, t->data, t->prazo, t->nota);
@@ -234,8 +245,44 @@ void criar_atividade(GtkWidget *botao, gpointer dados) {
 
     // limpa os campos e volta pro inicio
     limpar_campos(dados);
+
     GtkStack *stack = GTK_STACK(global->stack);
     gtk_stack_set_visible_child_name(stack, "inicio");
+}
+
+void save_files(Global *global){
+
+    FILE *f = fopen("tarefas.dat","wb");
+    if(f==NULL) return;
+
+    for(Tarefa *tar = global->head; tar!=NULL ; tar=tar->proximo){
+        fwrite(tar,sizeof(Tarefa),1,f);
+    }
+
+    fclose(f);
+
+}
+
+void load_files(Global *global){
+
+    FILE *f = fopen("tarefas.dat","rb");
+    if(f==NULL) return;
+
+    Tarefa **fim=&global->head;
+
+    while(TRUE){
+        Tarefa *novo=malloc(sizeof(Tarefa));
+        if(novo==NULL)break;
+
+        if(fread(novo,sizeof(Tarefa),1,f)!=1){
+            free(novo);
+            break;
+        }
+        novo->proximo=NULL;
+        *fim = novo;
+        fim = &novo->proximo;
+    }
+    fclose(f);
 }
 
 // muda a tela para a de criaçao, inicio e ler respectivamente.
@@ -261,17 +308,16 @@ void trinicio(GtkWidget *botao, gpointer dados) {
 }
 
 void trler(GtkWidget *botao, gpointer dados) {
-    Global *global=dados;
+    Global *global = dados;
     GtkStack *stack = GTK_STACK(global->stack);
 
     atualizar_lista(dados);
     gtk_stack_set_visible_child_name(stack, "ler");
 }
 
-
 int main(int argc, char **argv) {
     Global global;
-
+    
     gtk_init(&argc, &argv);
 
     // ----- codigo comeca aqui ----- 
@@ -375,6 +421,8 @@ int main(int argc, char **argv) {
     global.Matual = Matual;
     global.Aatual = Aatual;
 
+    load_files(&global);
+
     // config do grid ler ----0002----
     GtkWidget *ler;
     ler = gtk_grid_new(); 
@@ -429,7 +477,17 @@ int main(int argc, char **argv) {
     gtk_stack_set_visible_child_name(GTK_STACK(stack), "inicio");
     gtk_widget_show_all(window);
         
-
     gtk_main();
+    
+    // codigo que roda só depois que o app fecha
+    save_files(&global);
+
+    Tarefa *del=global.head;
+    while(global.head!=NULL){
+        global.head=global.head->proximo;
+        free(del);
+        del=global.head;
+    }
+
     return 0;
 }
