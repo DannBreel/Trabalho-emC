@@ -416,6 +416,7 @@ gtk_style_context_add_provider_for_screen(
     gtk_entry_set_max_length(GTK_ENTRY(titulo), 100);
 
     GtkWidget *nota = gtk_entry_new();
+    gtk_entry_set_max_length(GTK_ENTRY(nota), 6);
     gtk_entry_set_input_purpose(GTK_ENTRY(nota), GTK_INPUT_PURPOSE_NUMBER);
     
     gtk_widget_set_name(materia, "campo-materia");
