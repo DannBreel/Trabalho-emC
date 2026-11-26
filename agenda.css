@@ -1,0 +1,345 @@
+
+/* ===== CONFIGURAÇÃO GERAL ===== */
+
+window {
+    background-color: #F1F5F9;
+    color: #1E293B;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* ===== TEXTOS ===== */
+
+label {
+    color: #1E293B;
+    font-size: 14px;
+}
+
+/* ===== BOTÕES ===== */
+
+button {
+    background-color: #2563EB;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-weight: bold;
+    transition: 200ms;
+}
+
+button:hover {
+    background-color: #1D4ED8;
+}
+
+button:active {
+    background-color: #1E40AF;
+}
+
+/* ===== CAMPOS DE TEXTO ===== */
+
+entry {
+    background-color: #FFFFFF;
+    color: #1E293B;
+    border: 1px solid #CBD5E1;
+    border-radius: 8px;
+    padding: 10px;
+    caret-color: #2563EB;
+}
+
+entry:focus {
+    border: 1px solid #2563EB;
+}
+
+/* ===== LISTA DE ATIVIDADES ===== */
+
+list {
+    background-color: #FFFFFF;
+}
+
+list row {
+    background-color: #FFFFFF;
+    border-bottom: 1px solid #E2E8F0;
+}
+
+list row:hover {
+    background-color: #EFF6FF;
+}
+
+/* ===== CALENDÁRIO ===== */
+
+calendar {
+    background-color: #FFFFFF;
+    color: #1E293B;
+    border-radius: 8px;
+}
+
+button#botao-criar {
+    background-image: none;
+    background-color: #2563EB;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 10px;
+    font-size: 17px;
+    padding: 16px 45px;
+    font-weight: bold;
+}
+
+button#botao-criar:hover {
+    background-color: #1D4ED8;
+}
+
+button#botao-ler {
+    background-image: none;
+    background-color: #FFFFFF;
+    color: #2563EB;
+    border: 1px solid #CBD5E1;
+    border-radius: 10px;
+    padding: 14px 32px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+label#titulo-inicio {
+    font-size: 35px;
+    font-weight: bold;
+    color: #172554;
+}
+
+label#subtitulo-inicio {
+    font-size: 20px;
+    color: #505e72;
+}
+
+button#botao-criar label {
+    color: #FFFFFF;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+button#botao-ler label {
+    color: #2563EB;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+entry#campo-materia,
+entry#campo-titulo,
+entry#campo-nota {
+    background-color: #FFFFFF;
+    color: #172554;
+    border: 1px solid #CBD5E1;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 15px;
+    caret-color: #2563EB;
+}
+
+entry#campo-materia:focus,
+entry#campo-titulo:focus,
+entry#campo-nota:focus {
+    border: 2px solid #2563EB;
+}
+
+entry#campo-materia text,
+entry#campo-titulo text,
+entry#campo-nota text {
+    color: #172554;
+}
+
+label#label-formulario {
+    color: #172554;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+/* Botao Cancelar */
+button#botao-cancelar {
+    background-image: none;
+    background-color: #FFFFFF;
+    color: #64748B;
+    border: 1px solid #CBD5E1;
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-weight: bold;
+}
+
+button#botao-cancelar label {
+    color: #64748B;
+}
+
+/* Botao Pronto */
+button#botao-pronto {
+    background-image: none;
+    background-color: #2563EB;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-weight: bold;
+}
+
+button#botao-pronto label {
+    color: #FFFFFF;
+}
+
+/* Botao Prazo */
+button#botao-prazo {
+    background-image: none;
+    background-color: #2563EB;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-weight: bold;
+}
+
+button#botao-prazo label {
+    color: #FFFFFF;
+}
+
+button#botao-cancelar label,
+button#botao-pronto label,
+button#botao-prazo label {
+    font-family: "Segoe UI", sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+/* Calendario */
+calendar {
+    background-color: #FFFFFF;
+    color: #172554;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 10px;
+    font-family: "Segoe UI", sans-serif;
+}
+
+/* Cabecalho do calendario */
+calendar header {
+    background-color: #FFFFFF;
+    color: #172554;
+}
+
+/* Botoes de navegacao */
+calendar button {
+    background-image: none;
+    background-color: #FFFFFF;
+    color: #2563EB;
+    border: none;
+    border-radius: 8px;
+}
+
+/* dia selecionado */
+calendar:selected {
+    background-color: #2563EB;
+    color: #FFFFFF;
+    border-radius: 50%;
+    padding: 0;
+    margin: 0;
+    min-height: 28px;
+    min-width: 28px;
+}
+
+/* Botao Voltar */
+button#botao-voltar {
+    background-image: none;
+    background-color: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    border-radius: 10px;
+    padding: 10px 22px;
+}
+
+button#botao-voltar label {
+    color: #64748B;
+    font-family: "Segoe UI", sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+/* Lista de atividades */
+list {
+    background-color: #F1F5F9;
+}
+
+/* Area de rolagem */
+scrolledwindow {
+    background-color: #F1F5F9;
+    border: none;
+}
+
+/* Cartoes das atividades */
+list row {
+    background-color: #FFFFFF;
+    border-radius: 10px;
+    border: 1px solid #E2E8F0;
+    margin: 6px;
+    padding: 12px;
+}
+
+/* Botao Editar */
+button#botao-editar {
+    background-image: none;
+    background-color: #DBEAFE;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+}
+
+button#botao-editar label {
+    color: #1D4ED8;
+    font-family: "Segoe UI", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Botao Excluir */
+button#botao-excluir {
+    background-image: none;
+    background-color: #FEE2E2;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+}
+
+button#botao-excluir label {
+    color: #DC2626;
+    font-family: "Segoe UI", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Texto das atividades */
+label#texto-atividade {
+    color: #172554;
+    font-family: "Segoe UI", sans-serif;
+    font-size: 14px;
+    padding: 8px;
+}
+
+/* Fundo da tela Ler */
+#area-rolagem {
+    background-color: #F1F5F9;
+    border: none;
+}
+
+#lista-atividades {
+    background-color: #F1F5F9;
+}
+
+/* Efeito ao passar o mouse */
+button#botao-editar:hover {
+    background-color: #BFDBFE;
+}
+
+button#botao-excluir:hover {
+    background-color: #FECACA;
+}
+
+button#botao-voltar:hover {
+    background-color: #F1F5F9;
+}
+
+/* Efeito ao passar o mouse nos cartões */
+list row:hover {
+    background-color: #F8FAFC;
+    border-color: #BFDBFE;
+}
+

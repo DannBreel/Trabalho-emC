@@ -7,8 +7,8 @@
 // struct pra salvar as atvidades -- lista simplesmente encadeada --
 typedef struct Tarefa{
     // info principal
-    char titulo[30];
-    char materia[30];
+    char titulo[401];
+    char materia[121];
 
     char data[11];
     int data_sist;
@@ -153,15 +153,23 @@ void atualizar_lista(Global *global) {
     //  percorre a lista encadeada e cria uma linha por tarefa
     for (Tarefa *t = global->head; t != NULL; t = t->proximo) {
         
-        char texto[150];
+        char texto[650];
         snprintf(texto, sizeof(texto), "%s - %s\nData: %s Prazo: %s | Nota: %d",
                  t->materia, t->titulo, t->data, t->prazo, t->nota);
 
         GtkWidget *label = gtk_label_new(texto);
+        gtk_widget_set_name(label, "texto-atividade");
         gtk_widget_set_halign(label, GTK_ALIGN_START);
+        gtk_label_set_line_wrap(GTK_LABEL(label), TRUE);
+        gtk_label_set_line_wrap_mode(GTK_LABEL(label), PANGO_WRAP_WORD_CHAR);
+        gtk_label_set_xalign(GTK_LABEL(label), 0);
+        gtk_widget_set_hexpand(label, TRUE);
+        gtk_widget_set_halign(label, GTK_ALIGN_FILL);
 
         GtkWidget *bt_editar  = gtk_button_new_with_label("editar");
         GtkWidget *bt_excluir = gtk_button_new_with_label("excluir");
+        gtk_widget_set_name(bt_editar, "botao-editar");
+        gtk_widget_set_name(bt_excluir, "botao-excluir");
         gtk_widget_set_valign(bt_editar,  GTK_ALIGN_CENTER);
         gtk_widget_set_valign(bt_excluir, GTK_ALIGN_CENTER);
 
@@ -172,11 +180,11 @@ void atualizar_lista(Global *global) {
         g_signal_connect(bt_editar,  "clicked", G_CALLBACK(editar),  t);
         g_signal_connect(bt_excluir, "clicked", G_CALLBACK(excluir), t);
 
-        GtkWidget *linha = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+        GtkWidget *linha = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 14);
+        gtk_widget_set_margin_start(linha, 12);
+        gtk_widget_set_margin_end(linha, 12);
         gtk_widget_set_margin_top(linha, 8);
         gtk_widget_set_margin_bottom(linha, 8);
-        gtk_widget_set_margin_start(linha, 8);
-        gtk_widget_set_margin_end(linha, 8);
 
         gtk_box_pack_start(GTK_BOX(linha), label, TRUE, TRUE, 0);   
         gtk_box_pack_end(GTK_BOX(linha), bt_excluir, FALSE, FALSE, 0); 
@@ -229,6 +237,12 @@ void criar_atividade(GtkWidget *botao, gpointer dados) {
     const char *nota = gtk_entry_get_text(
         GTK_ENTRY(global->nota)
     );
+    for (int i = 0; nota[i] != '\0'; i++) {
+    if (!g_ascii_isdigit(nota[i])) {
+        popup_msg(global->window, "Digite apenas numeros na nota!");
+        return;
+    }
+}
 
     snprintf(novo->materia, sizeof(novo->materia), "%s", mat);
     snprintf(novo->titulo, sizeof(novo->titulo), "%s", tit);
@@ -319,6 +333,28 @@ int main(int argc, char **argv) {
     Global global;
     
     gtk_init(&argc, &argv);
+    // Carregar arquivo CSS
+    GtkCssProvider *css = gtk_css_provider_new();
+    GError *erro = NULL;
+
+    gboolean carregou = gtk_css_provider_load_from_path(
+        css,
+        "agenda.css",
+        &erro
+    );
+
+    if (carregou) {
+        printf("CSS carregado com sucesso!\n");
+    } else {
+    printf("Erro ao carregar CSS: %s\n", erro->message);
+    g_error_free(erro);
+}
+
+gtk_style_context_add_provider_for_screen(
+    gdk_screen_get_default(),
+    GTK_STYLE_PROVIDER(css),
+    GTK_STYLE_PROVIDER_PRIORITY_USER
+);
 
     // ----- codigo comeca aqui ----- 
 
@@ -340,12 +376,21 @@ int main(int argc, char **argv) {
     // config do grid Inicio ----0000----
     GtkWidget *inicio;
     inicio = gtk_grid_new();
+    // Titulo e subtitulo
+    GtkWidget *titulo_inicio = gtk_label_new("Minha Agenda");
+    GtkWidget *subtitulo = gtk_label_new("Organize suas atividades e prazos");
+    gtk_widget_set_name(titulo_inicio, "titulo-inicio");
+    gtk_widget_set_name(subtitulo, "subtitulo-inicio");
+    gtk_grid_attach(GTK_GRID(inicio), titulo_inicio, 0, 0, 2, 1);
+    gtk_grid_attach(GTK_GRID(inicio), subtitulo, 0, 1, 2, 1);
 
     // config butoes
     GtkWidget *btc;
     GtkWidget *btl;
     btc=gtk_button_new_with_label("Criar");
     btl=gtk_button_new_with_label("Ler");
+        gtk_widget_set_name(btc, "botao-criar");
+        gtk_widget_set_name(btl, "botao-ler");
 
     gtk_grid_set_row_spacing(GTK_GRID(inicio), 15);
     gtk_grid_set_column_spacing(GTK_GRID(inicio), 15);
@@ -353,22 +398,29 @@ int main(int argc, char **argv) {
     gtk_widget_set_valign(inicio, GTK_ALIGN_CENTER );
 
     // config Botoes e grid
-    gtk_grid_attach(GTK_GRID(inicio), btc,0,0,1,1);
-    gtk_grid_attach(GTK_GRID(inicio), btl,1,0,1,1);
+    gtk_grid_attach(GTK_GRID(inicio), btc, 0, 2, 2, 1);
+    gtk_grid_attach(GTK_GRID(inicio), btl, 0, 3, 2, 1);
 
     // config do grid Criar ----0001----
     GtkWidget *criar;
-    criar = gtk_grid_new();    
+    criar = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID(criar), 10);
+    gtk_grid_set_column_spacing(GTK_GRID(criar), 12);
 
     // inputs
 
     GtkWidget *materia = gtk_entry_new();
-    gtk_entry_set_max_length(GTK_ENTRY(materia), 29);
+    gtk_entry_set_max_length(GTK_ENTRY(materia), 100);
 
     GtkWidget *titulo = gtk_entry_new();
-    gtk_entry_set_max_length(GTK_ENTRY(titulo), 29);
+    gtk_entry_set_max_length(GTK_ENTRY(titulo), 100);
 
     GtkWidget *nota = gtk_entry_new();
+    gtk_entry_set_input_purpose(GTK_ENTRY(nota), GTK_INPUT_PURPOSE_NUMBER);
+    
+    gtk_widget_set_name(materia, "campo-materia");
+    gtk_widget_set_name(titulo, "campo-titulo");
+    gtk_widget_set_name(nota, "campo-nota");
 
     // botao prazo | calendario popup
     GtkWidget *prazo;
@@ -382,24 +434,36 @@ int main(int argc, char **argv) {
     gtk_entry_set_input_purpose(GTK_ENTRY(nota), GTK_INPUT_PURPOSE_NUMBER);
 
     // grid attach e center align
-    gtk_grid_attach(GTK_GRID(criar), gtk_label_new("materia:"), 0, 0, 1, 1);
+
+    GtkWidget *label_materia = gtk_label_new("Matéria");
+    GtkWidget *label_titulo = gtk_label_new("Título");
+    GtkWidget *label_nota = gtk_label_new("Nota");
+
+    gtk_widget_set_name(label_materia, "label-formulario");
+    gtk_widget_set_name(label_titulo, "label-formulario");
+    gtk_widget_set_name(label_nota, "label-formulario");
+
+    gtk_grid_attach(GTK_GRID(criar), label_materia, 0, 0, 1, 1);
     gtk_grid_attach(GTK_GRID(criar), materia, 0, 1, 1, 1);
 
-    gtk_grid_attach(GTK_GRID(criar), gtk_label_new("titulo:"), 0, 2, 1, 1);
+    gtk_grid_attach(GTK_GRID(criar), label_titulo, 0, 2, 1, 1);
     gtk_grid_attach(GTK_GRID(criar), titulo, 0, 3, 1, 1);
 
-    gtk_grid_attach(GTK_GRID(criar), prazo, 1,1,1,1 );
+    gtk_grid_attach(GTK_GRID(criar), prazo, 1, 1, 1, 1);
 
-    gtk_grid_attach(GTK_GRID(criar), gtk_label_new("nota:"), 0, 4, 1, 1);
+    gtk_grid_attach(GTK_GRID(criar), label_nota, 0, 4, 1, 1);
     gtk_grid_attach(GTK_GRID(criar), nota, 0, 5, 1, 1);
 
     // botao cancela e cria
     GtkWidget *botcancel = gtk_button_new_with_label("Cancelar");
     GtkWidget *botcriar = gtk_button_new_with_label("Pronto");
     g_object_set_data(G_OBJECT(botcriar),"global",&global);
+    gtk_widget_set_name(botcancel, "botao-cancelar");
+    gtk_widget_set_name(botcriar, "botao-pronto");
+    gtk_widget_set_name(prazo, "botao-prazo");
 
-    gtk_grid_attach(GTK_GRID(criar), botcancel, 1, 8, 1, 1);
-    gtk_grid_attach(GTK_GRID(criar), botcriar, 2, 8, 1, 1);
+    gtk_grid_attach(GTK_GRID(criar), botcancel, 1, 6, 1, 1);
+    gtk_grid_attach(GTK_GRID(criar), botcriar, 2, 6, 1, 1);
 
     gtk_widget_set_halign(criar, GTK_ALIGN_CENTER );
     gtk_widget_set_valign(criar, GTK_ALIGN_CENTER );
@@ -425,7 +489,14 @@ int main(int argc, char **argv) {
 
     // config do grid ler ----0002----
     GtkWidget *ler;
-    ler = gtk_grid_new(); 
+    ler = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID(ler), 15);
+    gtk_grid_set_column_spacing(GTK_GRID(ler), 15);
+
+    gtk_widget_set_margin_top(ler, 20);
+    gtk_widget_set_margin_bottom(ler, 20);
+    gtk_widget_set_margin_start(ler, 20);
+    gtk_widget_set_margin_end(ler, 20);
 
     // sistema de scroll
     GtkWidget *scroll = gtk_scrolled_window_new(NULL, NULL);
@@ -440,7 +511,10 @@ int main(int argc, char **argv) {
 
     global.listbox = listbox;
 
-    GtkWidget *botvoltar = gtk_button_new_with_label("voltar");
+    GtkWidget *botvoltar = gtk_button_new_with_label("Voltar");
+    gtk_widget_set_name(botvoltar, "botao-voltar");
+    gtk_widget_set_name(listbox, "lista-atividades");
+    gtk_widget_set_name(scroll, "area-rolagem");
     gtk_grid_attach(GTK_GRID(ler), botvoltar, 0, 0, 1, 1);
 
     // config da stack  | pra alternar as telas inicio, criar, ler.
