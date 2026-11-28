@@ -2,13 +2,13 @@
 #include <stdio.h>
 #include <time.h>
 #include <gtk/gtk.h>
-
+#include <stdbool.h> // pra comilar no linux :p
 
 // struct pra salvar as atvidades -- lista simplesmente encadeada --
 typedef struct Tarefa{
     // info principal
-    char titulo[401];
-    char materia[121];
+    char titulo[30];
+    char materia[30];
 
     char data[11];
     int data_sist;
@@ -153,7 +153,7 @@ void atualizar_lista(Global *global) {
     //  percorre a lista encadeada e cria uma linha por tarefa
     for (Tarefa *t = global->head; t != NULL; t = t->proximo) {
         
-        char texto[650];
+        char texto[150];
         snprintf(texto, sizeof(texto), "%s - %s\nData: %s Prazo: %s | Nota: %d",
                  t->materia, t->titulo, t->data, t->prazo, t->nota);
 
@@ -237,12 +237,15 @@ void criar_atividade(GtkWidget *botao, gpointer dados) {
     const char *nota = gtk_entry_get_text(
         GTK_ENTRY(global->nota)
     );
+
+    // gambiarra do caraio em, e redundante >:(  -d
     for (int i = 0; nota[i] != '\0'; i++) {
     if (!g_ascii_isdigit(nota[i])) {
         popup_msg(global->window, "Digite apenas numeros na nota!");
+        free(novo); // alguem esqueceu disso. -d
         return;
+        }
     }
-}
 
     snprintf(novo->materia, sizeof(novo->materia), "%s", mat);
     snprintf(novo->titulo, sizeof(novo->titulo), "%s", tit);
@@ -343,7 +346,7 @@ int main(int argc, char **argv) {
         &erro
     );
 
-    if (carregou) {
+    if (carregou) { // que? -D
         printf("CSS carregado com sucesso!\n");
     } else {
     printf("Erro ao carregar CSS: %s\n", erro->message);
@@ -389,8 +392,8 @@ gtk_style_context_add_provider_for_screen(
     GtkWidget *btl;
     btc=gtk_button_new_with_label("Criar");
     btl=gtk_button_new_with_label("Ler");
-        gtk_widget_set_name(btc, "botao-criar");
-        gtk_widget_set_name(btl, "botao-ler");
+    gtk_widget_set_name(btc, "botao-criar");
+    gtk_widget_set_name(btl, "botao-ler");
 
     gtk_grid_set_row_spacing(GTK_GRID(inicio), 15);
     gtk_grid_set_column_spacing(GTK_GRID(inicio), 15);
@@ -410,10 +413,10 @@ gtk_style_context_add_provider_for_screen(
     // inputs
 
     GtkWidget *materia = gtk_entry_new();
-    gtk_entry_set_max_length(GTK_ENTRY(materia), 100);
+    gtk_entry_set_max_length(GTK_ENTRY(materia), 29);
 
     GtkWidget *titulo = gtk_entry_new();
-    gtk_entry_set_max_length(GTK_ENTRY(titulo), 100);
+    gtk_entry_set_max_length(GTK_ENTRY(titulo), 29);
 
     GtkWidget *nota = gtk_entry_new();
     gtk_entry_set_max_length(GTK_ENTRY(nota), 6);
